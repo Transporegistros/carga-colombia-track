@@ -1,13 +1,13 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, Mail, User, Building } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/context/AuthContext";
 
 const Registro = () => {
   const [formData, setFormData] = useState({
@@ -18,9 +18,8 @@ const Registro = () => {
     empresa: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const { signUp, loading } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,29 +46,17 @@ const Registro = () => {
       return;
     }
 
-    setLoading(true);
     try {
-      // En una implementación real, aquí se haría la llamada a Supabase
-      // const { data, error } = await supabase.auth.signUp({
-      //   email: formData.email,
-      //   password: formData.password,
-      //   options: {
-      //     data: {
-      //       nombre: formData.nombre,
-      //       empresa: formData.empresa
-      //     }
-      //   }
-      // });
-
-      // Simulación de registro exitoso
-      setTimeout(() => {
-        toast.success("Registro exitoso. Por favor verifique su correo electrónico");
-        navigate("/login");
-      }, 1500);
+      await signUp(
+        formData.email, 
+        formData.password, 
+        {
+          nombre: formData.nombre,
+          empresa_nombre: formData.empresa
+        }
+      );
     } catch (err) {
       setError((err as Error).message || "Error al registrarse");
-    } finally {
-      setLoading(false);
     }
   };
 

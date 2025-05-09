@@ -2,6 +2,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface User {
   id: string;
@@ -15,7 +22,10 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+  signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -26,65 +36,191 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Verificar si hay un usuario en localStorage al cargar
+  // Check for existing session and subscribe to auth changes
   useEffect(() => {
-    const checkUser = async () => {
+    const checkSession = async () => {
+      setLoading(true);
       try {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          // En una implementación real con Supabase, verificaríamos la sesión
-          setUser(JSON.parse(storedUser));
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Get user profile data from profiles table
+          const { data: profile } = await supabase
+            .from('perfiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email!,
+            nombre: profile?.nombre || session.user.email!.split('@')[0],
+            rol: profile?.rol || 'usuario',
+            empresa_id: profile?.empresa_id
+          };
+          
+          setUser(userData);
         }
       } catch (error) {
-        console.error("Error al recuperar la sesión:", error);
+        console.error("Error checking session:", error);
       } finally {
         setLoading(false);
       }
     };
-
-    checkUser();
+    
+    // Check for session immediately
+    checkSession();
+    
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          // Get user profile data
+          const { data: profile } = await supabase
+            .from('perfiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email!,
+            nombre: profile?.nombre || session.user.email!.split('@')[0],
+            rol: profile?.rol || 'usuario',
+            empresa_id: profile?.empresa_id
+          };
+          
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+    
+    // Cleanup subscription on unmount
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // En una implementación real, esto sería una llamada a Supabase
-      // const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // Simulación de inicio de sesión exitoso
-      if (email && password) {
-        const mockUser = {
-          id: "f6a7d8c9-e5b4-3a2c-1d0f-9e8d7c6b5a4b",
-          email,
-          nombre: email.split('@')[0],
-          rol: "admin",
-          empresa_id: "12345678-abcd-1234-efgh-1234567890ab"
-        };
-        
-        setUser(mockUser);
-        localStorage.setItem("user", JSON.stringify(mockUser));
+      if (error) throw error;
+      
+      if (data.user) {
         toast.success("Inicio de sesión exitoso");
         navigate("/");
-        return;
       }
-      
-      throw new Error("Credenciales incorrectas");
-    } catch (error) {
-      toast.error("Error al iniciar sesión: " + (error as Error).message);
+    } catch (error: any) {
+      toast.error("Error al iniciar sesión: " + error.message);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    // En una implementación real, esto sería una llamada a Supabase
-    // await supabase.auth.signOut();
+  const logout = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      toast.success("Sesión cerrada correctamente");
+      navigate("/login");
+    } catch (error: any) {
+      toast.error("Error al cerrar sesión: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Instrucciones enviadas a su correo electrónico");
+      return;
+    } catch (error: any) {
+      toast.error("Error al enviar instrucciones: " + error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProfile = async (data: Partial<User>) => {
+    if (!user) throw new Error("No hay usuario autenticado");
     
-    setUser(null);
-    localStorage.removeItem("user");
-    toast.success("Sesión cerrada correctamente");
-    navigate("/login");
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('perfiles')
+        .upsert({ 
+          id: user.id,
+          ...data,
+          updated_at: new Date()
+        });
+      
+      if (error) throw error;
+      
+      // Update local user state
+      setUser(prev => prev ? { ...prev, ...data } : null);
+      toast.success("Perfil actualizado correctamente");
+    } catch (error: any) {
+      toast.error("Error al actualizar perfil: " + error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string, userData: Partial<User>) => {
+    setLoading(true);
+    try {
+      // Register user
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData,
+        },
+      });
+      
+      if (error) throw error;
+      
+      if (data.user) {
+        // Create profile record
+        await supabase.from('perfiles').insert([
+          {
+            id: data.user.id,
+            ...userData,
+            email: email,
+          },
+        ]);
+        
+        toast.success("Registro exitoso. Por favor verifique su correo electrónico");
+        navigate("/login");
+      }
+    } catch (error: any) {
+      toast.error("Error al registrarse: " + error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -93,6 +229,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       login,
       logout,
+      resetPassword,
+      updateProfile,
+      signUp,
       isAuthenticated: !!user
     }}>
       {children}

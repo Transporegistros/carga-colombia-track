@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -30,6 +30,11 @@ const Login = () => {
     } catch (err) {
       setError((err as Error).message || "Error al iniciar sesión");
     }
+  };
+
+  const handleGoogleLogin = async () => {
+    // To be implemented with Supabase
+    setError("Función de inicio con Google en desarrollo");
   };
 
   return (

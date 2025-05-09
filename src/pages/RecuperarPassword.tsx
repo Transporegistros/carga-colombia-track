@@ -6,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/context/AuthContext";
 
 const RecuperarPassword = () => {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { resetPassword, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,20 +24,11 @@ const RecuperarPassword = () => {
       return;
     }
 
-    setLoading(true);
     try {
-      // En una implementación real, esto sería una llamada a Supabase
-      // const { error } = await supabase.auth.resetPasswordForEmail(email);
-      
-      // Simulación de envío exitoso
-      setTimeout(() => {
-        setSent(true);
-        toast.success("Instrucciones enviadas a su correo electrónico");
-      }, 1500);
+      await resetPassword(email);
+      setSent(true);
     } catch (err) {
       setError((err as Error).message || "Error al enviar las instrucciones");
-    } finally {
-      setLoading(false);
     }
   };
 

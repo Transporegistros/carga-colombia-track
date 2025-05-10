@@ -220,33 +220,47 @@ export function useAuthProvider() {
         let empresa_id = userData.empresa_id;
         
         if (userData.empresa_nombre && !userData.empresa_id) {
-          const { data: empresaData, error: empresaError } = await supabase
-            .from('empresas')
-            .insert([
-              { 
-                nombre: userData.empresa_nombre 
-              }
-            ])
-            .select('id')
-            .single();
-            
-          if (empresaError) throw empresaError;
-          empresa_id = empresaData?.id;
+          try {
+            const { data: empresaData, error: empresaError } = await supabase
+              .from('empresas')
+              .insert([
+                { 
+                  nombre: userData.empresa_nombre 
+                }
+              ])
+              .select('id')
+              .single();
+              
+            if (empresaError) throw empresaError;
+            empresa_id = empresaData?.id;
+          } catch (empresaError: any) {
+            console.error("Error creating empresa:", empresaError);
+            toast.error("Error al crear empresa: " + empresaError.message);
+            // Continue with user creation even if empresa creation fails
+          }
         }
         
         // Create profile record - make sure data matches perfiles table schema
-        await supabase.from('perfiles').insert([
-          {
-            id: data.user.id,
-            nombre: userData.nombre,
-            // Map 'rol' to 'cargo' if needed
-            cargo: userData.rol,
-            empresa_id: empresa_id
-          },
-        ]);
-        
-        toast.success("Registro exitoso. Por favor verifique su correo electrónico");
-        navigate("/login");
+        try {
+          const { error: profileError } = await supabase.from('perfiles').insert([
+            {
+              id: data.user.id,
+              nombre: userData.nombre,
+              cargo: userData.rol,
+              empresa_id: empresa_id
+            },
+          ]);
+          
+          if (profileError) throw profileError;
+          
+          toast.success("Registro exitoso. Por favor verifique su correo electrónico");
+          navigate("/login");
+        } catch (profileError: any) {
+          console.error("Error creating profile:", profileError);
+          toast.error("Error al crear perfil: " + profileError.message);
+          // User is already created, so just redirect to login
+          navigate("/login");
+        }
       }
     } catch (error: any) {
       toast.error("Error al registrarse: " + error.message);

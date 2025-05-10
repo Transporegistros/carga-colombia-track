@@ -19,22 +19,31 @@ export function useAuthProvider() {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // Get user profile data from profiles table
-          const { data: profile } = await supabase
-            .from('perfiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          const userData: User = {
-            id: session.user.id,
-            email: session.user.email!,
-            nombre: profile?.nombre || session.user.email!.split('@')[0],
-            rol: profile?.rol || 'usuario',
-            empresa_id: profile?.empresa_id
-          };
-          
-          setUser(userData);
+          try {
+            // Get user profile data from profiles table
+            const { data: profile } = await supabase
+              .from('perfiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            
+            const userData: User = {
+              id: session.user.id,
+              email: session.user.email!,
+              nombre: profile?.nombre || session.user.email!.split('@')[0],
+              rol: profile?.rol || 'usuario',
+              empresa_id: profile?.empresa_id
+            };
+            
+            setUser(userData);
+          } catch (profileError) {
+            console.error("Error fetching profile:", profileError);
+            // If we can't get the profile, at least set basic user data
+            setUser({
+              id: session.user.id,
+              email: session.user.email!,
+            });
+          }
         }
       } catch (error) {
         console.error("Error checking session:", error);
@@ -47,35 +56,58 @@ export function useAuthProvider() {
     checkSession();
     
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session) {
-          // Get user profile data
-          const { data: profile } = await supabase
-            .from('perfiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          const userData: User = {
-            id: session.user.id,
-            email: session.user.email!,
-            nombre: profile?.nombre || session.user.email!.split('@')[0],
-            rol: profile?.rol || 'usuario',
-            empresa_id: profile?.empresa_id
-          };
-          
-          setUser(userData);
-        } else {
-          setUser(null);
+    let subscription;
+    try {
+      const { data } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (session) {
+            try {
+              // Get user profile data
+              const { data: profile } = await supabase
+                .from('perfiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              const userData: User = {
+                id: session.user.id,
+                email: session.user.email!,
+                nombre: profile?.nombre || session.user.email!.split('@')[0],
+                rol: profile?.rol || 'usuario',
+                empresa_id: profile?.empresa_id
+              };
+              
+              setUser(userData);
+            } catch (profileError) {
+              console.error("Error fetching profile on auth change:", profileError);
+              // If we can't get the profile, at least set basic user data
+              setUser({
+                id: session.user.id,
+                email: session.user.email!,
+              });
+            }
+          } else {
+            setUser(null);
+          }
+          setLoading(false);
         }
-        setLoading(false);
-      }
-    );
+      );
+      
+      subscription = data.subscription;
+    } catch (error) {
+      console.error("Error subscribing to auth changes:", error);
+      setLoading(false);
+    }
     
     // Cleanup subscription on unmount
     return () => {
-      subscription?.unsubscribe();
+      if (subscription) {
+        try {
+          subscription.unsubscribe();
+        } catch (error) {
+          console.error("Error unsubscribing from auth changes:", error);
+        }
+      }
     };
   }, []);
 

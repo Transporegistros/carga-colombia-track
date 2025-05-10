@@ -31,7 +31,8 @@ export function useAuthProvider() {
               id: session.user.id,
               email: session.user.email!,
               nombre: profile?.nombre || session.user.email!.split('@')[0],
-              rol: profile?.rol || 'usuario',
+              // No 'rol' field in the perfiles table, using cargo instead or default to 'usuario'
+              rol: profile?.cargo || 'usuario',
               empresa_id: profile?.empresa_id
             };
             
@@ -73,7 +74,8 @@ export function useAuthProvider() {
                 id: session.user.id,
                 email: session.user.email!,
                 nombre: profile?.nombre || session.user.email!.split('@')[0],
-                rol: profile?.rol || 'usuario',
+                // No 'rol' field in the perfiles table, using cargo instead or default to 'usuario'
+                rol: profile?.cargo || 'usuario',
                 empresa_id: profile?.empresa_id
               };
               
@@ -173,12 +175,21 @@ export function useAuthProvider() {
     
     setLoading(true);
     try {
+      // Format data to match perfiles table schema
+      const profileData: Record<string, any> = {
+        id: user.id,
+        nombre: data.nombre,
+        // Map 'rol' to 'cargo' since the perfiles table uses 'cargo' instead of 'rol'
+        cargo: data.rol,
+        empresa_id: data.empresa_id
+      };
+
+      // Convert Date to string for updated_at (fix type mismatch)
       const { error } = await supabase
         .from('perfiles')
         .upsert({ 
-          id: user.id,
-          ...data,
-          updated_at: new Date()
+          ...profileData,
+          ultima_conexion: new Date().toISOString() // Use ultima_conexion instead of updated_at
         });
       
       if (error) throw error;
@@ -227,12 +238,13 @@ export function useAuthProvider() {
           empresa_id = empresaData?.id;
         }
         
-        // Create profile record
+        // Create profile record - make sure data matches perfiles table schema
         await supabase.from('perfiles').insert([
           {
             id: data.user.id,
             nombre: userData.nombre,
-            email: email,
+            // Map 'rol' to 'cargo' if needed
+            cargo: userData.rol,
             empresa_id: empresa_id
           },
         ]);

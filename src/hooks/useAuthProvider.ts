@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -74,7 +73,7 @@ export function useAuthProvider() {
                 id: session.user.id,
                 email: session.user.email!,
                 nombre: profile?.nombre || session.user.email!.split('@')[0],
-                // No 'rol' field in the perfiles table, using cargo instead or default to 'usuario'
+                // No 'rol' field in the perfiles table, using cargo instead of 'usuario'
                 rol: profile?.cargo || 'usuario',
                 empresa_id: profile?.empresa_id
               };
@@ -176,21 +175,18 @@ export function useAuthProvider() {
     setLoading(true);
     try {
       // Format data to match perfiles table schema
-      const profileData: Record<string, any> = {
+      const profileData = {
         id: user.id,
         nombre: data.nombre,
         // Map 'rol' to 'cargo' since the perfiles table uses 'cargo' instead of 'rol'
         cargo: data.rol,
-        empresa_id: data.empresa_id
+        empresa_id: data.empresa_id,
+        ultima_conexion: new Date().toISOString() // Use ultima_conexion instead of updated_at
       };
 
-      // Convert Date to string for updated_at (fix type mismatch)
       const { error } = await supabase
         .from('perfiles')
-        .upsert({ 
-          ...profileData,
-          ultima_conexion: new Date().toISOString() // Use ultima_conexion instead of updated_at
-        });
+        .upsert(profileData);
       
       if (error) throw error;
       

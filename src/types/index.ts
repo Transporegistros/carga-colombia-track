@@ -42,3 +42,12 @@ export interface DatosResumen {
   gastosMes: number;
   combustibleMes: number;
 }
+
+export interface User {
+  id: string;
+  email: string;
+  nombre?: string;
+  rol?: string;
+  empresa_id?: string;
+  empresa_nombre?: string;
+}

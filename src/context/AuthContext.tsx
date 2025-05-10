@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -16,6 +15,7 @@ interface User {
   nombre?: string;
   rol?: string;
   empresa_id?: string;
+  empresa_nombre?: string;
 }
 
 interface AuthContextType {
@@ -203,12 +203,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       
       if (data.user) {
+        // Create empresa if empresa_nombre is provided
+        let empresa_id = userData.empresa_id;
+        
+        if (userData.empresa_nombre && !userData.empresa_id) {
+          const { data: empresaData, error: empresaError } = await supabase
+            .from('empresas')
+            .insert([
+              { 
+                nombre: userData.empresa_nombre 
+              }
+            ])
+            .select('id')
+            .single();
+            
+          if (empresaError) throw empresaError;
+          empresa_id = empresaData?.id;
+        }
+        
         // Create profile record
         await supabase.from('perfiles').insert([
           {
             id: data.user.id,
-            ...userData,
+            nombre: userData.nombre,
             email: email,
+            empresa_id: empresa_id
           },
         ]);
         

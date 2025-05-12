@@ -19,6 +19,7 @@ const Registro = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { signUp, loading } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,20 +30,24 @@ const Registro = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
 
     // Validaciones
     if (!formData.nombre || !formData.email || !formData.password || !formData.empresa) {
       setError("Todos los campos son obligatorios");
+      setIsSubmitting(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Las contraseñas no coinciden");
+      setIsSubmitting(false);
       return;
     }
 
     if (formData.password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres");
+      setIsSubmitting(false);
       return;
     }
 
@@ -57,6 +62,8 @@ const Registro = () => {
       );
     } catch (err) {
       setError((err as Error).message || "Error al registrarse");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -90,7 +97,7 @@ const Registro = () => {
                   onChange={handleChange}
                   className="pl-10"
                   required
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 />
                 <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </div>
@@ -108,7 +115,7 @@ const Registro = () => {
                   onChange={handleChange}
                   className="pl-10"
                   required
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 />
                 <Building className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </div>
@@ -126,7 +133,7 @@ const Registro = () => {
                   onChange={handleChange}
                   className="pl-10"
                   required
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 />
                 <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </div>
@@ -144,7 +151,7 @@ const Registro = () => {
                   onChange={handleChange}
                   className="pl-10"
                   required
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 />
                 <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                 <Button 
@@ -153,7 +160,7 @@ const Registro = () => {
                   size="icon" 
                   className="absolute right-0 top-0" 
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-muted-foreground" />
@@ -179,14 +186,14 @@ const Registro = () => {
                   onChange={handleChange}
                   className="pl-10"
                   required
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 />
                 <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </div>
             </div>
             
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Registrando..." : "Registrarse"}
+            <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
+              {loading || isSubmitting ? "Registrando..." : "Registrarse"}
             </Button>
           </form>
 

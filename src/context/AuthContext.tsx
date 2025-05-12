@@ -19,8 +19,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = useAuthProvider();
   
+  // Create a compatible version of auth that matches the expected types
+  const contextValue: AuthContextType = {
+    user: auth.user,
+    loading: auth.loading,
+    isAuthenticated: auth.isAuthenticated,
+    login: async (email, password) => {
+      await auth.login(email, password);
+      // Return type is void - we handle the data internally in useAuthProvider
+    },
+    logout: auth.logout,
+    resetPassword: auth.resetPassword,
+    updateProfile: auth.updateProfile,
+    signUp: auth.signUp
+  };
+  
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

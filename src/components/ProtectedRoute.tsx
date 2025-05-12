@@ -2,13 +2,18 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
     // Para depuración
-    console.log("Auth status:", { isAuthenticated, loading });
+    console.log("ProtectedRoute - Auth status:", { isAuthenticated, loading });
+    
+    if (!loading && !isAuthenticated) {
+      toast.error("Por favor inicie sesión para acceder a esta sección");
+    }
   }, [isAuthenticated, loading]);
 
   if (loading) {

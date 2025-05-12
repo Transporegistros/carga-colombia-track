@@ -117,7 +117,7 @@ export function useAuthProvider() {
       
       if (error) throw error;
       
-      // No need to navigate here, the onAuthStateChange will handle it
+      // Return data internally but we don't expose it in the interface
       return data;
     } catch (error: any) {
       console.error("Login error:", error);
@@ -220,6 +220,7 @@ export function useAuthProvider() {
         
         if (userData.empresa_nombre && !userData.empresa_id) {
           try {
+            console.log("Creating company:", userData.empresa_nombre);
             const { data: empresaData, error: empresaError } = await supabase
               .from('empresas')
               .insert([
@@ -235,6 +236,8 @@ export function useAuthProvider() {
               console.error("Error creating empresa:", empresaError);
               throw empresaError;
             }
+            
+            console.log("Company created:", empresaData);
             empresa_id = empresaData?.id;
           } catch (empresaError: any) {
             console.error("Error creating empresa:", empresaError);
@@ -244,6 +247,7 @@ export function useAuthProvider() {
         
         // Create profile record - make sure data matches perfiles table schema
         try {
+          console.log("Creating profile for user:", data.user.id, "with empresa_id:", empresa_id);
           const { error: profileError } = await supabase.from('perfiles').insert([
             {
               id: data.user.id,
@@ -258,6 +262,7 @@ export function useAuthProvider() {
             throw profileError;
           }
           
+          console.log("Profile created successfully");
           return data;
         } catch (profileError: any) {
           console.error("Error creating profile:", profileError);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -61,6 +60,8 @@ const Registro = () => {
         return;
       }
 
+      console.log("Registrando usuario:", formData.email);
+      
       await signUp(
         formData.email, 
         formData.password, 
@@ -78,6 +79,8 @@ const Registro = () => {
         setError("Este correo electrónico ya está registrado");
       } else if ((err as Error).message.includes("Email not confirmed")) {
         setError("Por favor confirme su correo electrónico antes de iniciar sesión");
+      } else if ((err as Error).message.includes("empresa")) {
+        setError((err as Error).message);
       } else {
         setError((err as Error).message || "Error al registrarse");
       }

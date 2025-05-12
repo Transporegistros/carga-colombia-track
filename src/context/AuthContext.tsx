@@ -31,7 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout: auth.logout,
     resetPassword: auth.resetPassword,
     updateProfile: auth.updateProfile,
-    signUp: auth.signUp
+    signUp: async (email, password, userData) => {
+      await auth.signUp(email, password, userData);
+      // Return type is void - we handle the data internally in useAuthProvider
+    }
   };
   
   return (

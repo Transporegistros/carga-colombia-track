@@ -1,9 +1,15 @@
 
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 export function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth();
+
+  useEffect(() => {
+    // Para depuración
+    console.log("Auth status:", { isAuthenticated, loading });
+  }, [isAuthenticated, loading]);
 
   if (loading) {
     return (

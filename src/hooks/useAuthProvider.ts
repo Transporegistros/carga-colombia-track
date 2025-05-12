@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -11,6 +12,52 @@ export function useAuthProvider() {
 
   // Check for existing session and subscribe to auth changes
   useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          try {
+            // Get user profile data from profiles table
+            const { data: profile, error: profileError } = await supabase
+              .from('perfiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            
+            if (profileError) {
+              console.error("Error fetching profile:", profileError);
+              // If we can't get the profile, at least set basic user data
+              setUser({
+                id: session.user.id,
+                email: session.user.email!,
+              });
+              return;
+            }
+            
+            const userData: User = {
+              id: session.user.id,
+              email: session.user.email!,
+              nombre: profile?.nombre || session.user.email!.split('@')[0],
+              rol: profile?.cargo || 'usuario',
+              empresa_id: profile?.empresa_id
+            };
+            
+            setUser(userData);
+          } catch (error) {
+            console.error("Error en onAuthStateChange:", error);
+            // If we can't get the profile, at least set basic user data
+            setUser({
+              id: session.user.id,
+              email: session.user.email!,
+            });
+          }
+        } else {
+          setUser(null);
+        }
+      }
+    );
+    
+    // THEN check for existing session
     const checkSession = async () => {
       setLoading(true);
       try {
@@ -24,13 +71,12 @@ export function useAuthProvider() {
               .from('perfiles')
               .select('*')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
             
             const userData: User = {
               id: session.user.id,
               email: session.user.email!,
               nombre: profile?.nombre || session.user.email!.split('@')[0],
-              // No 'rol' field in the perfiles table, using cargo instead or default to 'usuario'
               rol: profile?.cargo || 'usuario',
               empresa_id: profile?.empresa_id
             };
@@ -55,60 +101,9 @@ export function useAuthProvider() {
     // Check for session immediately
     checkSession();
     
-    // Subscribe to auth changes
-    let subscription;
-    try {
-      const { data } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (session) {
-            try {
-              // Get user profile data
-              const { data: profile } = await supabase
-                .from('perfiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-              
-              const userData: User = {
-                id: session.user.id,
-                email: session.user.email!,
-                nombre: profile?.nombre || session.user.email!.split('@')[0],
-                // No 'rol' field in the perfiles table, using cargo instead of 'usuario'
-                rol: profile?.cargo || 'usuario',
-                empresa_id: profile?.empresa_id
-              };
-              
-              setUser(userData);
-            } catch (profileError) {
-              console.error("Error fetching profile on auth change:", profileError);
-              // If we can't get the profile, at least set basic user data
-              setUser({
-                id: session.user.id,
-                email: session.user.email!,
-              });
-            }
-          } else {
-            setUser(null);
-          }
-          setLoading(false);
-        }
-      );
-      
-      subscription = data.subscription;
-    } catch (error) {
-      console.error("Error subscribing to auth changes:", error);
-      setLoading(false);
-    }
-    
     // Cleanup subscription on unmount
     return () => {
-      if (subscription) {
-        try {
-          subscription.unsubscribe();
-        } catch (error) {
-          console.error("Error unsubscribing from auth changes:", error);
-        }
-      }
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -122,13 +117,15 @@ export function useAuthProvider() {
       
       if (error) throw error;
       
-      if (data.user) {
-        toast.success("Inicio de sesión exitoso");
-        navigate("/");
-      }
+      // No need to navigate here, the onAuthStateChange will handle it
+      return data;
     } catch (error: any) {
-      toast.error("Error al iniciar sesión: " + error.message);
-      throw error;
+      console.error("Login error:", error);
+      if (error.message.includes("Invalid login")) {
+        throw new Error("Credenciales inválidas. Verifique su correo y contraseña.");
+      } else {
+        throw error;
+      }
     } finally {
       setLoading(false);
     }
@@ -178,17 +175,19 @@ export function useAuthProvider() {
       const profileData = {
         id: user.id,
         nombre: data.nombre,
-        // Map 'rol' to 'cargo' since the perfiles table uses 'cargo' instead of 'rol'
         cargo: data.rol,
         empresa_id: data.empresa_id,
-        ultima_conexion: new Date().toISOString() // Use ultima_conexion instead of updated_at
+        ultima_conexion: new Date().toISOString()
       };
 
       const { error } = await supabase
         .from('perfiles')
         .upsert(profileData);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating profile:", error);
+        throw error;
+      }
       
       // Update local user state
       setUser(prev => prev ? { ...prev, ...data } : null);
@@ -225,18 +224,21 @@ export function useAuthProvider() {
               .from('empresas')
               .insert([
                 { 
-                  nombre: userData.empresa_nombre 
+                  nombre: userData.empresa_nombre,
+                  email: email
                 }
               ])
               .select('id')
               .single();
               
-            if (empresaError) throw empresaError;
+            if (empresaError) {
+              console.error("Error creating empresa:", empresaError);
+              throw empresaError;
+            }
             empresa_id = empresaData?.id;
           } catch (empresaError: any) {
             console.error("Error creating empresa:", empresaError);
-            toast.error("Error al crear empresa: " + empresaError.message);
-            // Continue with user creation even if empresa creation fails
+            throw new Error("Error al crear empresa: " + empresaError.message);
           }
         }
         
@@ -246,24 +248,27 @@ export function useAuthProvider() {
             {
               id: data.user.id,
               nombre: userData.nombre,
-              cargo: userData.rol,
+              cargo: userData.rol || 'usuario',
               empresa_id: empresa_id
             },
           ]);
           
-          if (profileError) throw profileError;
+          if (profileError) {
+            console.error("Error creating profile:", profileError);
+            throw profileError;
+          }
           
-          toast.success("Registro exitoso. Por favor verifique su correo electrónico");
-          navigate("/login");
+          return data;
         } catch (profileError: any) {
           console.error("Error creating profile:", profileError);
-          toast.error("Error al crear perfil: " + profileError.message);
-          // User is already created, so just redirect to login
-          navigate("/login");
+          throw new Error("Error al crear perfil: " + profileError.message);
         }
       }
     } catch (error: any) {
-      toast.error("Error al registrarse: " + error.message);
+      console.error("Error signing up:", error);
+      if (error.message.includes("already registered")) {
+        throw new Error("Este correo ya está registrado. Por favor inicie sesión.");
+      }
       throw error;
     } finally {
       setLoading(false);

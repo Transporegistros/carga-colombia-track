@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,33 +8,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login, loading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, loading, isAuthenticated } = useAuth();
+
+  // Si el usuario ya está autenticado, redirigir al dashboard
+  useState(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
-    if (!email || !password) {
-      setError("Por favor ingrese correo y contraseña");
-      return;
-    }
+    setIsSubmitting(true);
     
     try {
+      if (!email || !password) {
+        setError("Por favor ingrese correo y contraseña");
+        setIsSubmitting(false);
+        return;
+      }
+      
       await login(email, password);
+      toast.success("Inicio de sesión exitoso");
+      navigate("/");
     } catch (err) {
-      setError((err as Error).message || "Error al iniciar sesión");
+      console.error("Error de inicio de sesión:", err);
+      setError((err as Error).message || "Error al iniciar sesión. Verifique sus credenciales.");
+    } finally {
+      setIsSubmitting(false);
     }
-  };
-
-  const handleGoogleLogin = async () => {
-    // To be implemented with Supabase
-    setError("Función de inicio con Google en desarrollo");
   };
 
   return (
@@ -66,7 +78,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   required
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 />
                 <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </div>
@@ -87,7 +99,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
                   required
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 />
                 <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                 <Button 
@@ -96,7 +108,7 @@ const Login = () => {
                   size="icon" 
                   className="absolute right-0 top-0" 
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-muted-foreground" />
@@ -109,8 +121,8 @@ const Login = () => {
                 </Button>
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
+            <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
+              {loading || isSubmitting ? "Iniciando sesión..." : "Iniciar Sesión"}
             </Button>
           </form>
 

@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,8 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Eye, EyeOff, Lock, Mail, User, Building } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const Registro = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
@@ -20,7 +22,14 @@ const Registro = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, loading } = useAuth();
+  const { signUp, loading, isAuthenticated } = useAuth();
+
+  // Si el usuario ya está autenticado, redirigir al dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -32,26 +41,26 @@ const Registro = () => {
     setError(null);
     setIsSubmitting(true);
 
-    // Validaciones
-    if (!formData.nombre || !formData.email || !formData.password || !formData.empresa) {
-      setError("Todos los campos son obligatorios");
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden");
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
+      // Validaciones
+      if (!formData.nombre || !formData.email || !formData.password || !formData.empresa) {
+        setError("Todos los campos son obligatorios");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        setError("Las contraseñas no coinciden");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (formData.password.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres");
+        setIsSubmitting(false);
+        return;
+      }
+
       await signUp(
         formData.email, 
         formData.password, 
@@ -60,8 +69,18 @@ const Registro = () => {
           empresa_nombre: formData.empresa
         }
       );
+      
+      toast.success("Registro exitoso. Por favor inicie sesión.");
+      navigate("/login");
     } catch (err) {
-      setError((err as Error).message || "Error al registrarse");
+      console.error("Error de registro:", err);
+      if ((err as Error).message.includes("already registered")) {
+        setError("Este correo electrónico ya está registrado");
+      } else if ((err as Error).message.includes("Email not confirmed")) {
+        setError("Por favor confirme su correo electrónico antes de iniciar sesión");
+      } else {
+        setError((err as Error).message || "Error al registrarse");
+      }
     } finally {
       setIsSubmitting(false);
     }

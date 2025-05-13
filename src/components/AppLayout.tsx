@@ -1,5 +1,5 @@
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/context/AuthContext";
@@ -13,16 +13,8 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { user, logout, isAuthenticated, loading } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    console.log("AppLayout - Auth status:", { isAuthenticated, loading, user });
-    
-    if (!loading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, loading, navigate, user]);
 
   const handleLogout = async () => {
     try {
@@ -35,12 +27,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return null; // The ProtectedRoute component will handle redirection
   }
 
   return (

@@ -9,7 +9,6 @@ export function ProtectedRoute() {
   const location = useLocation();
 
   useEffect(() => {
-    // Para depuración
     console.log("ProtectedRoute - Auth status:", { isAuthenticated, loading, user, path: location.pathname });
     
     if (!loading && !isAuthenticated) {

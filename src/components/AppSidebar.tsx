@@ -74,8 +74,7 @@ export function AppSidebar() {
     setActivePath(location.pathname);
   }, [location.pathname]);
 
-  const handleNavigation = (path: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleNavigation = (path: string) => {
     navigate(path);
   };
 
@@ -101,8 +100,8 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton asChild>
-                    <a 
-                      onClick={handleNavigation(item.path)}
+                    <div 
+                      onClick={() => handleNavigation(item.path)}
                       className={cn(
                         "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer",
                         activePath === item.path && "bg-sidebar-accent text-primary font-medium"
@@ -110,7 +109,7 @@ export function AppSidebar() {
                     >
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
-                    </a>
+                    </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

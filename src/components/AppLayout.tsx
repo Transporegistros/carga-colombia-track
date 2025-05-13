@@ -6,27 +6,42 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "./ui/button";
 import { LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("AppLayout - Auth status:", { isAuthenticated, user });
+    console.log("AppLayout - Auth status:", { isAuthenticated, loading, user });
     
-    if (!isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate, user]);
+  }, [isAuthenticated, loading, navigate, user]);
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+      toast.success("Sesión cerrada correctamente");
+      navigate('/login');
+    } catch (error) {
+      toast.error("Error al cerrar sesión");
+      console.error("Error al cerrar sesión:", error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>

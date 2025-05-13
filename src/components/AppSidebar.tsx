@@ -24,6 +24,7 @@ import {
   SidebarTrigger
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 const menuItems = [
   {
@@ -67,6 +68,16 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
+  const [activePath, setActivePath] = useState('/');
+  
+  useEffect(() => {
+    setActivePath(location.pathname);
+  }, [location.pathname]);
+
+  const handleNavigation = (path: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(path);
+  };
 
   return (
     <Sidebar className="border-r border-border">
@@ -91,13 +102,10 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton asChild>
                     <a 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate(item.path);
-                      }}
+                      onClick={handleNavigation(item.path)}
                       className={cn(
                         "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer",
-                        location.pathname === item.path && "bg-sidebar-accent text-primary font-medium"
+                        activePath === item.path && "bg-sidebar-accent text-primary font-medium"
                       )}
                     >
                       <item.icon className="h-5 w-5" />

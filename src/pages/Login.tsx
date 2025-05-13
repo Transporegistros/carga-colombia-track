@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,19 +12,24 @@ import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, loading, isAuthenticated } = useAuth();
+  
+  // Determinar la página a la que redirigir después del login
+  const from = location.state?.from?.pathname || "/";
 
   // Si el usuario ya está autenticado, redirigir al dashboard
-  useState(() => {
-    if (isAuthenticated) {
-      navigate("/");
+  useEffect(() => {
+    console.log("Login - Auth status:", { isAuthenticated, loading });
+    if (!loading && isAuthenticated) {
+      navigate(from, { replace: true });
     }
-  });
+  }, [isAuthenticated, loading, navigate, from]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +45,7 @@ const Login = () => {
       
       await login(email, password);
       toast.success("Inicio de sesión exitoso");
-      navigate("/");
+      navigate(from, { replace: true });
     } catch (err) {
       console.error("Error de inicio de sesión:", err);
       setError((err as Error).message || "Error al iniciar sesión. Verifique sus credenciales.");

@@ -10,6 +10,7 @@ import {
   Menu 
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -64,12 +65,14 @@ const menuItems = [
 
 export function AppSidebar() {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <Sidebar className="border-r border-border">
       <SidebarHeader className="h-14 flex items-center px-4">
         {!isMobile && (
-          <h2 className="text-lg font-bold text-transpo-blue">
+          <h2 className="text-lg font-bold text-primary">
             TranspoRegistrosPlus
           </h2>
         )}
@@ -87,10 +90,16 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton asChild>
-                    <a href={item.path} className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                      window.location.pathname === item.path && "bg-sidebar-accent text-transpo-blue font-medium"
-                    )}>
+                    <a 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(item.path);
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer",
+                        location.pathname === item.path && "bg-sidebar-accent text-primary font-medium"
+                      )}
+                    >
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </a>

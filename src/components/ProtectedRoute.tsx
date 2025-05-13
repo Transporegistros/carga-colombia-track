@@ -5,16 +5,16 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 
 export function ProtectedRoute() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   useEffect(() => {
     // Para depuración
-    console.log("ProtectedRoute - Auth status:", { isAuthenticated, loading });
+    console.log("ProtectedRoute - Auth status:", { isAuthenticated, loading, user });
     
     if (!loading && !isAuthenticated) {
       toast.error("Por favor inicie sesión para acceder a esta sección");
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, user]);
 
   if (loading) {
     return (

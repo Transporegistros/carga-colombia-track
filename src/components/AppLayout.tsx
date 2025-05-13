@@ -1,17 +1,32 @@
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "./ui/button";
 import { LogOut, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log("AppLayout - Auth status:", { isAuthenticated, user });
+    
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate, user]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   return (
     <SidebarProvider>
@@ -31,7 +46,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     </div>
                     <span className="text-sm hidden md:inline-block">{user.nombre || user.email}</span>
                   </div>
-                  <Button variant="outline" size="sm" onClick={logout} className="flex gap-1">
+                  <Button variant="outline" size="sm" onClick={handleLogout} className="flex gap-1">
                     <LogOut className="h-4 w-4" />
                     <span className="hidden sm:inline">Cerrar sesión</span>
                   </Button>

@@ -26,14 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: auth.isAuthenticated,
     login: async (email, password) => {
       await auth.login(email, password);
-      // Return type is void - we handle the data internally in useAuthProvider
     },
     logout: auth.logout,
     resetPassword: auth.resetPassword,
     updateProfile: auth.updateProfile,
     signUp: async (email, password, userData) => {
       await auth.signUp(email, password, userData);
-      // Return type is void - we handle the data internally in useAuthProvider
     }
   };
   

@@ -204,6 +204,7 @@ export function useAuthProvider() {
     setLoading(true);
     try {
       // Register user
+      console.log("Registrando usuario con email:", email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -220,13 +221,15 @@ export function useAuthProvider() {
         
         if (userData.empresa_nombre && !userData.empresa_id) {
           try {
-            console.log("Creating company:", userData.empresa_nombre);
+            console.log("Creando empresa:", userData.empresa_nombre);
+            
+            // Importante: Asegurarse de que el email siempre se establece para la empresa
             const { data: empresaData, error: empresaError } = await supabase
               .from('empresas')
               .insert([
                 { 
                   nombre: userData.empresa_nombre,
-                  email: email
+                  email: email // Siempre establecer el email explícitamente
                 }
               ])
               .select('id')
@@ -234,10 +237,10 @@ export function useAuthProvider() {
               
             if (empresaError) {
               console.error("Error creating empresa:", empresaError);
-              throw empresaError;
+              throw new Error(`Error al crear empresa: ${empresaError.message} (${empresaError.code})`);
             }
             
-            console.log("Company created:", empresaData);
+            console.log("Empresa creada:", empresaData);
             empresa_id = empresaData?.id;
           } catch (empresaError: any) {
             console.error("Error creating empresa:", empresaError);
@@ -247,7 +250,7 @@ export function useAuthProvider() {
         
         // Create profile record - make sure data matches perfiles table schema
         try {
-          console.log("Creating profile for user:", data.user.id, "with empresa_id:", empresa_id);
+          console.log("Creando perfil para usuario:", data.user.id, "con empresa_id:", empresa_id);
           const { error: profileError } = await supabase.from('perfiles').insert([
             {
               id: data.user.id,
@@ -262,7 +265,7 @@ export function useAuthProvider() {
             throw profileError;
           }
           
-          console.log("Profile created successfully");
+          console.log("Perfil creado correctamente");
           return data;
         } catch (profileError: any) {
           console.error("Error creating profile:", profileError);

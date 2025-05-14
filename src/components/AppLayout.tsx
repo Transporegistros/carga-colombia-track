@@ -4,9 +4,11 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "./ui/button";
-import { LogOut, User } from "lucide-react";
+import { LogOut, Menu, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSidebar } from "./ui/sidebar";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -15,6 +17,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const handleLogout = async () => {
     try {
@@ -37,7 +40,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6">
-            <div>
+            <div className="flex items-center gap-2">
+              {isMobile && (
+                <SidebarToggleButton />
+              )}
               <h1 className="text-lg font-semibold">TranspoRegistrosPlus</h1>
             </div>
             <div className="flex items-center gap-2">
@@ -63,5 +69,22 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </div>
     </SidebarProvider>
+  );
+}
+
+// Componente para el botón de alternar la barra lateral
+function SidebarToggleButton() {
+  const { toggleSidebar } = useSidebar();
+  
+  return (
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      onClick={toggleSidebar} 
+      className="h-8 w-8 mr-1"
+      aria-label="Mostrar/ocultar menú"
+    >
+      <Menu className="h-5 w-5" />
+    </Button>
   );
 }

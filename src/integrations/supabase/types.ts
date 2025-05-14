@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      auditoria: {
+        Row: {
+          accion: string
+          detalles: Json | null
+          id: string
+          ip_address: string | null
+          registro_id: string
+          tabla: string
+          timestamp: string
+          usuario_id: string
+        }
+        Insert: {
+          accion: string
+          detalles?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id: string
+          tabla: string
+          timestamp?: string
+          usuario_id: string
+        }
+        Update: {
+          accion?: string
+          detalles?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id?: string
+          tabla?: string
+          timestamp?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       configuraciones: {
         Row: {
           clave: string
@@ -162,6 +195,42 @@ export type Database = {
           },
         ]
       }
+      modulos: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          descripcion: string | null
+          icono: string | null
+          id: string
+          nombre: string
+          orden: number
+          ruta: string
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          descripcion?: string | null
+          icono?: string | null
+          id?: string
+          nombre: string
+          orden: number
+          ruta: string
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          descripcion?: string | null
+          icono?: string | null
+          id?: string
+          nombre?: string
+          orden?: number
+          ruta?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       perfiles: {
         Row: {
           apellido: string | null
@@ -202,6 +271,50 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permisos_rol: {
+        Row: {
+          crear: boolean | null
+          created_at: string | null
+          editar: boolean | null
+          eliminar: boolean | null
+          id: string
+          modulo_id: string
+          rol: string
+          updated_at: string | null
+          ver: boolean | null
+        }
+        Insert: {
+          crear?: boolean | null
+          created_at?: string | null
+          editar?: boolean | null
+          eliminar?: boolean | null
+          id?: string
+          modulo_id: string
+          rol: string
+          updated_at?: string | null
+          ver?: boolean | null
+        }
+        Update: {
+          crear?: boolean | null
+          created_at?: string | null
+          editar?: boolean | null
+          eliminar?: boolean | null
+          id?: string
+          modulo_id?: string
+          rol?: string
+          updated_at?: string | null
+          ver?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permisos_rol_modulo_id_fkey"
+            columns: ["modulo_id"]
+            isOneToOne: false
+            referencedRelation: "modulos"
             referencedColumns: ["id"]
           },
         ]
@@ -398,6 +511,24 @@ export type Database = {
           gastos_mes: number
           combustible_mes: number
         }[]
+      }
+      obtener_modulos_por_rol: {
+        Args: { rol_usuario: string }
+        Returns: {
+          activo: boolean | null
+          created_at: string | null
+          descripcion: string | null
+          icono: string | null
+          id: string
+          nombre: string
+          orden: number
+          ruta: string
+          updated_at: string | null
+        }[]
+      }
+      tiene_permiso: {
+        Args: { modulo_ruta: string; accion: string }
+        Returns: boolean
       }
     }
     Enums: {

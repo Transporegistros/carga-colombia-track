@@ -1,13 +1,7 @@
 
 import { 
-  Truck, 
-  Calendar, 
-  Receipt, 
-  DollarSign, 
-  Fuel, 
   BarChart3, 
-  MapPin, 
-  Menu 
+  Menu
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -25,50 +19,36 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { usePermisos } from "@/hooks/usePermisos";
+import type { Modulo } from "@/services/permisosService";
 
-const menuItems = [
-  {
-    title: "Dashboard",
-    icon: BarChart3,
-    path: "/"
-  },
-  {
-    title: "Vehículos",
-    icon: Truck,
-    path: "/vehiculos"
-  },
-  {
-    title: "Viajes",
-    icon: MapPin,
-    path: "/viajes"
-  },
-  {
-    title: "Gastos",
-    icon: DollarSign,
-    path: "/gastos"
-  },
-  {
-    title: "Combustible",
-    icon: Fuel,
-    path: "/combustible"
-  },
-  {
-    title: "Peajes",
-    icon: Receipt,
-    path: "/peajes"
-  },
-  {
-    title: "Reportes",
-    icon: Calendar,
-    path: "/reportes"
-  }
-];
+// Mapa de nombres de iconos a componentes de Lucide
+const iconComponents: Record<string, React.ComponentType<any>> = {
+  BarChart3
+};
+
+// Importar dinámicamente iconos de Lucide
+import * as LucideIcons from "lucide-react";
 
 export function AppSidebar() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
   const [activePath, setActivePath] = useState('/');
+  const { modulos, loading } = usePermisos();
+  const [menuItems, setMenuItems] = useState<Modulo[]>([]);
+
+  // Procesar módulos para asignar componentes de iconos
+  useEffect(() => {
+    if (modulos && modulos.length > 0) {
+      setMenuItems(modulos.map(modulo => ({
+        ...modulo,
+        IconComponent: modulo.icono ? 
+          (LucideIcons as any)[modulo.icono] || LucideIcons.FileText : 
+          LucideIcons.FileText
+      })));
+    }
+  }, [modulos]);
   
   useEffect(() => {
     setActivePath(location.pathname);
@@ -97,22 +77,32 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menú Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton asChild>
-                    <div 
-                      onClick={() => handleNavigation(item.path)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer",
-                        activePath === item.path && "bg-sidebar-accent text-primary font-medium"
-                      )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {loading ? (
+                <div className="flex justify-center p-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                menuItems.map((item) => {
+                  const IconComponent = item.IconComponent || LucideIcons.FileText;
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton asChild>
+                        <div 
+                          onClick={() => handleNavigation(item.ruta)}
+                          className={cn(
+                            "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer",
+                            activePath === item.ruta && "bg-sidebar-accent text-primary font-medium"
+                          )}
+                          title={item.descripcion || item.nombre}
+                        >
+                          <IconComponent className="h-5 w-5" />
+                          <span>{item.nombre}</span>
+                        </div>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -18,6 +18,8 @@ import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 import RecuperarPassword from "./pages/RecuperarPassword";
 import NotFound from "./pages/NotFound";
+import Auditoria from "./pages/Auditoria";
+import Configuracion from "./pages/Configuracion";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +52,8 @@ const App = () => (
               <Route path="/combustible" element={<AppLayout><Combustible /></AppLayout>} />
               <Route path="/peajes" element={<AppLayout><Peajes /></AppLayout>} />
               <Route path="/reportes" element={<AppLayout><Reportes /></AppLayout>} />
+              <Route path="/auditoria" element={<AppLayout><Auditoria /></AppLayout>} />
+              <Route path="/configuracion" element={<AppLayout><Configuracion /></AppLayout>} />
             </Route>
             
             {/* Ruta 404 */}

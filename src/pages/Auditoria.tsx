@@ -9,8 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { obtenerRegistrosAuditoria, obtenerMisRegistrosAuditoria } from "@/services/auditoriaService";
-import { RegistroAuditoria } from "@/types";
+import { obtenerRegistrosAuditoria, obtenerMisRegistrosAuditoria, RegistroAuditoria } from "@/services/auditoriaService";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Search, Loader2, Database, Shield, User } from "lucide-react";
@@ -44,14 +43,14 @@ export default function Auditoria() {
   const [filtroTabla, setFiltroTabla] = useState("");
   const [filtroAccion, setFiltroAccion] = useState("");
   const [busqueda, setBusqueda] = useState("");
-  const [fechas, setFechas] = useState<DateRange>({ from: undefined, to: undefined });
+  const [fechas, setFechas] = useState<DateRange | undefined>({ from: undefined, to: undefined });
 
   const cargarRegistros = async () => {
     setLoading(true);
     try {
       let resultado;
-      const desde = fechas.from ? format(fechas.from, 'yyyy-MM-dd') : undefined;
-      const hasta = fechas.to ? format(fechas.to, 'yyyy-MM-dd') + 'T23:59:59' : undefined;
+      const desde = fechas?.from ? format(fechas.from, 'yyyy-MM-dd') : undefined;
+      const hasta = fechas?.to ? format(fechas.to, 'yyyy-MM-dd') + 'T23:59:59' : undefined;
       
       if (tabActiva === "todos" && user?.rol === 'admin') {
         resultado = await obtenerRegistrosAuditoria(100, desde, hasta, filtroTabla || undefined, filtroAccion || undefined);
@@ -140,7 +139,7 @@ export default function Auditoria() {
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
               <DatePickerWithRange 
                 date={fechas}
-                setDate={setFechas}
+                onSelect={setFechas}
                 className="min-w-[240px]"
               />
               <Select value={filtroTabla} onValueChange={setFiltroTabla}>

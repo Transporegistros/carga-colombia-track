@@ -66,9 +66,10 @@ export async function obtenerRegistrosAuditoria(
     return (data || []).map(registro => {
       // Tratar la información del usuario de forma más segura
       let userEmail = 'Usuario desconocido';
+      // Comprobamos explícitamente si registro.usuario es null o undefined
       if (registro.usuario && typeof registro.usuario === 'object') {
         // Verificar que registro.usuario no sea null y tenga propiedad email
-        userEmail = registro.usuario?.email || 'Usuario desconocido';
+        userEmail = registro.usuario.email || 'Usuario desconocido';
       }
       
       return {

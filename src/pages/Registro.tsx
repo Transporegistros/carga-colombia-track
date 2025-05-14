@@ -1,89 +1,73 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail, User, Building } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, AtSign, Building, User, Lock } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { RolSelector } from "@/components/RolSelector";
 
 const Registro = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    nombre: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    empresa: "",
-  });
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [empresa_nombre, setEmpresaNombre] = useState("");
+  const [rol, setRol] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, loading, isAuthenticated } = useAuth();
+  const { signUp, isAuthenticated, loading } = useAuth();
 
   // Si el usuario ya está autenticado, redirigir al dashboard
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/");
-    }
-  }, [isAuthenticated, navigate]);
+  if (!loading && isAuthenticated) {
+    navigate("/");
+    return null;
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
-
+    
     try {
-      // Validaciones
-      if (!formData.nombre || !formData.email || !formData.password || !formData.empresa) {
-        setError("Todos los campos son obligatorios");
+      // Validaciones básicas
+      if (!nombre || !email || !password || !confirmPassword) {
+        setError("Por favor complete todos los campos obligatorios");
         setIsSubmitting(false);
         return;
       }
-
-      if (formData.password !== formData.confirmPassword) {
+      
+      if (password !== confirmPassword) {
         setError("Las contraseñas no coinciden");
         setIsSubmitting(false);
         return;
       }
-
-      if (formData.password.length < 6) {
+      
+      if (password.length < 6) {
         setError("La contraseña debe tener al menos 6 caracteres");
         setIsSubmitting(false);
         return;
       }
-
-      console.log("Registrando usuario:", formData.email);
       
-      await signUp(
-        formData.email, 
-        formData.password, 
-        {
-          nombre: formData.nombre,
-          empresa_nombre: formData.empresa
-        }
-      );
+      // Datos del usuario para el registro
+      const userData = {
+        nombre,
+        rol,
+        empresa_nombre: empresa_nombre || undefined,
+      };
       
-      toast.success("Registro exitoso. Por favor inicie sesión.");
+      await signUp(email, password, userData);
+      toast.success("Registro exitoso. Revise su correo para confirmar su cuenta.");
       navigate("/login");
     } catch (err) {
       console.error("Error de registro:", err);
-      if ((err as Error).message.includes("already registered")) {
-        setError("Este correo electrónico ya está registrado");
-      } else if ((err as Error).message.includes("Email not confirmed")) {
-        setError("Por favor confirme su correo electrónico antes de iniciar sesión");
-      } else if ((err as Error).message.includes("empresa")) {
-        setError((err as Error).message);
-      } else {
-        setError((err as Error).message || "Error al registrarse");
-      }
+      setError((err as Error).message || "Error al registrarse. Intente nuevamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -94,10 +78,10 @@ const Registro = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold tracking-tight text-primary">
-            Crear nueva cuenta
+            Crear una cuenta
           </CardTitle>
           <CardDescription>
-            Complete el formulario para registrarse en TranspoRegistrosPlus
+            Ingrese sus datos para registrarse en el sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -106,17 +90,16 @@ const Registro = () => {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegistro} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="nombre">Nombre completo</Label>
+              <Label htmlFor="nombre">Nombre<span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Input
                   id="nombre"
-                  name="nombre"
                   type="text"
-                  placeholder="Juan Pérez"
-                  value={formData.nombre}
-                  onChange={handleChange}
+                  placeholder="Su nombre"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
                   className="pl-10"
                   required
                   disabled={loading || isSubmitting}
@@ -126,51 +109,54 @@ const Registro = () => {
             </div>
             
             <div className="space-y-2">
+              <Label htmlFor="email">Correo electrónico<span className="text-red-500">*</span></Label>
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="correo@ejemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                  disabled={loading || isSubmitting}
+                />
+                <AtSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
               <Label htmlFor="empresa">Nombre de la empresa</Label>
               <div className="relative">
                 <Input
                   id="empresa"
-                  name="empresa"
                   type="text"
-                  placeholder="Transportes XYZ"
-                  value={formData.empresa}
-                  onChange={handleChange}
+                  placeholder="Nombre de su empresa"
+                  value={empresa_nombre}
+                  onChange={(e) => setEmpresaNombre(e.target.value)}
                   className="pl-10"
-                  required
                   disabled={loading || isSubmitting}
                 />
                 <Building className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </div>
+              <p className="text-xs text-muted-foreground">Déjelo en blanco si se unirá a una empresa existente</p>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
-              <div className="relative">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="correo@ejemplo.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="pl-10"
-                  required
-                  disabled={loading || isSubmitting}
-                />
-                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
+            <RolSelector
+              value={rol}
+              onChange={setRol}
+              isRequired={true}
+            />
             
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">Contraseña<span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Input
                   id="password"
-                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
                   required
                   disabled={loading || isSubmitting}
@@ -197,15 +183,14 @@ const Registro = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+              <Label htmlFor="confirmPassword">Confirmar contraseña<span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
-                  name="confirmPassword"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-10"
                   required
                   disabled={loading || isSubmitting}
@@ -215,7 +200,7 @@ const Registro = () => {
             </div>
             
             <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
-              {loading || isSubmitting ? "Registrando..." : "Registrarse"}
+              {loading || isSubmitting ? "Procesando..." : "Registrarse"}
             </Button>
           </form>
 

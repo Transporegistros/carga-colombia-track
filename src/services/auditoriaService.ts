@@ -1,7 +1,22 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { RegistroAuditoria } from "@/types";
+
+// Exportamos el tipo RegistroAuditoria para que pueda ser usado en otros archivos
+export interface RegistroAuditoria {
+  id: string;
+  usuario_id: string;
+  tabla: string;
+  accion: string;
+  registro_id: string;
+  detalles: any;
+  ip_address: string | null;
+  timestamp: string;
+  usuario?: {
+    email: string;
+    nombre?: string;
+  };
+}
 
 /**
  * Obtiene los registros de auditoría (para administradores)
@@ -52,7 +67,8 @@ export async function obtenerRegistrosAuditoria(
       // Tratar la información del usuario de forma más segura
       let userEmail = 'Usuario desconocido';
       if (registro.usuario && typeof registro.usuario === 'object') {
-        userEmail = registro.usuario.email || 'Usuario desconocido';
+        // Verificar que registro.usuario no sea null y tenga propiedad email
+        userEmail = registro.usuario?.email || 'Usuario desconocido';
       }
       
       return {

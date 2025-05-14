@@ -265,6 +265,27 @@ export function useAuthProvider() {
             throw profileError;
           }
           
+          // Si se ha proporcionado un rol, asignarlo al usuario
+          if (userData.rol) {
+            try {
+              const { error: rolError } = await supabase.from('usuarios_roles').insert([
+                {
+                  user_id: data.user.id,
+                  role_id: userData.rol
+                }
+              ]);
+              
+              if (rolError) {
+                console.error("Error asignando rol al usuario:", rolError);
+                // No lanzamos error para no interrumpir el flujo, pero lo registramos
+              } else {
+                console.log("Rol asignado correctamente al usuario");
+              }
+            } catch (rolError) {
+              console.error("Error al asignar rol:", rolError);
+            }
+          }
+          
           console.log("Perfil creado correctamente");
           return data;
         } catch (profileError: any) {

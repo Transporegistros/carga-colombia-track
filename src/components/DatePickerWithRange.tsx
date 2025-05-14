@@ -16,23 +16,14 @@ import { cn } from "@/lib/utils";
 export interface DatePickerWithRangeProps {
   className?: string;
   date: DateRange | undefined;
-  setDate: (date: DateRange | undefined) => void;
-  onSelect?: (date: DateRange | undefined) => void;
+  onSelect: (date: DateRange | undefined) => void;
 }
 
 export function DatePickerWithRange({
   className,
   date,
-  setDate,
   onSelect,
 }: DatePickerWithRangeProps) {
-  const handleSelect = (selectedDate: DateRange | undefined) => {
-    setDate(selectedDate);
-    if (onSelect) {
-      onSelect(selectedDate);
-    }
-  };
-
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -66,7 +57,7 @@ export function DatePickerWithRange({
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={handleSelect}
+            onSelect={onSelect}
             numberOfMonths={2}
             className={cn("p-3 pointer-events-auto")}
           />

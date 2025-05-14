@@ -2,7 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RegistroAuditoria } from "@/types";
-import { useAuth } from "@/context/AuthContext";
 
 /**
  * Obtiene los registros de auditoría (para administradores)
@@ -50,8 +49,11 @@ export async function obtenerRegistrosAuditoria(
 
     // Formatear los datos para que sean más fáciles de usar
     return (data || []).map(registro => {
-      // Asegurarnos que el usuario sea un objeto con las propiedades esperadas
-      const userEmail = registro.usuario?.email || 'Usuario desconocido';
+      // Tratar la información del usuario de forma más segura
+      let userEmail = 'Usuario desconocido';
+      if (registro.usuario && typeof registro.usuario === 'object') {
+        userEmail = registro.usuario.email || 'Usuario desconocido';
+      }
       
       return {
         ...registro,

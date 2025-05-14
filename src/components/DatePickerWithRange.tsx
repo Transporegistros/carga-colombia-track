@@ -16,8 +16,8 @@ import { cn } from "@/lib/utils";
 export interface DatePickerWithRangeProps {
   className?: string;
   date: DateRange | undefined;
-  setDate?: (date: DateRange | undefined) => void; // Changed from onSelect to setDate with optional
-  onSelect?: (date: DateRange | undefined) => void; // Added for backward compatibility
+  setDate: (date: DateRange | undefined) => void;
+  onSelect?: (date: DateRange | undefined) => void;
 }
 
 export function DatePickerWithRange({
@@ -27,9 +27,7 @@ export function DatePickerWithRange({
   onSelect,
 }: DatePickerWithRangeProps) {
   const handleSelect = (selectedDate: DateRange | undefined) => {
-    if (setDate) {
-      setDate(selectedDate);
-    }
+    setDate(selectedDate);
     if (onSelect) {
       onSelect(selectedDate);
     }

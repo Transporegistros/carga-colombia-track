@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { getViajes, getVehiculos, addViaje } from "@/lib/mockData";
 import { Viaje, Vehiculo } from "@/types";
@@ -36,6 +35,7 @@ const Viajes = () => {
     carga: "",
     estado: "pendiente",
     conductor: "",
+    distancia: 0
   });
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,6 +66,7 @@ const Viajes = () => {
       carga: "",
       estado: "pendiente",
       conductor: "",
+      distancia: 0
     });
     
     toast.success("Viaje agregado correctamente");
@@ -201,6 +202,25 @@ const Viajes = () => {
                       placeholder="Nombre del conductor"
                       value={newViaje.conductor}
                       onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="distancia">Distancia estimada (km)</Label>
+                    <Input
+                      id="distancia"
+                      name="distancia"
+                      type="number"
+                      placeholder="Distancia en kilómetros"
+                      value={newViaje.distancia}
+                      onChange={(e) => handleInputChange({
+                        ...e,
+                        target: {
+                          ...e.target,
+                          value: e.target.value,
+                          name: "distancia"
+                        }
+                      })}
                     />
                   </div>
                 </div>

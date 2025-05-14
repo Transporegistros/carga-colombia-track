@@ -9,16 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { obtenerRegistrosAuditoria, obtenerMisRegistrosAuditoria, RegistroAuditoria } from "@/services/auditoriaService";
+import { obtenerRegistrosAuditoria, obtenerMisRegistrosAuditoria } from "@/services/auditoriaService";
+import { RegistroAuditoria } from "@/types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Search, Loader2, Database, Shield, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type DateRange = {
-  from: Date | undefined;
-  to: Date | undefined;
-};
+import { DateRange } from "react-day-picker";
 
 function formatDateTime(date: string): string {
   return format(new Date(date), "dd MMM yyyy HH:mm:ss", { locale: es });
@@ -137,8 +134,8 @@ export default function Auditoria() {
                 value={busqueda} 
                 onChange={(e) => setBusqueda(e.target.value)} 
                 className="max-w-sm"
-                prefix={<Search className="h-4 w-4" />}
               />
+              <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
             </div>
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
               <DatePickerWithRange 

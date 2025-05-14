@@ -66,11 +66,15 @@ export async function obtenerRegistrosAuditoria(
     return (data || []).map(registro => {
       // Tratar la información del usuario de forma más segura
       let userEmail = 'Usuario desconocido';
+      
       // Comprobamos explícitamente si registro.usuario es null o undefined
-      if (registro.usuario && typeof registro.usuario === 'object') {
-        // Verificamos que registro.usuario.email existe antes de asignarlo
-        if ('email' in registro.usuario && registro.usuario.email) {
-          userEmail = registro.usuario.email;
+      if (registro.usuario !== null && registro.usuario !== undefined && typeof registro.usuario === 'object') {
+        // Utilizar type assertion para ayudar a TypeScript a entender que usuario no es null aquí
+        const usuarioObj = registro.usuario as { email?: string };
+        
+        // Verificamos que registro.usuario.email existe y no es null/undefined
+        if (usuarioObj.email) {
+          userEmail = usuarioObj.email;
         }
       }
       

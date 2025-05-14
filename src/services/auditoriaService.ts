@@ -1,21 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-export interface RegistroAuditoria {
-  id: string;
-  usuario_id: string;
-  tabla: string;
-  accion: string;
-  registro_id: string;
-  detalles: any;
-  ip_address: string | null;
-  timestamp: string;
-  usuario?: {
-    email: string;
-    nombre?: string;
-  };
-}
+import { RegistroAuditoria } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * Obtiene los registros de auditoría (para administradores)
@@ -32,10 +19,7 @@ export async function obtenerRegistrosAuditoria(
       .from('auditoria')
       .select(`
         *,
-        usuario:usuario_id(
-          email:email,
-          nombre:perfiles(nombre)
-        )
+        usuario:usuario_id(email)
       `)
       .order('timestamp', { ascending: false })
       .limit(limite);
@@ -65,13 +49,18 @@ export async function obtenerRegistrosAuditoria(
     }
 
     // Formatear los datos para que sean más fáciles de usar
-    return (data || []).map(registro => ({
-      ...registro,
-      usuario: {
-        email: registro.usuario?.email || 'Usuario desconocido',
-        nombre: registro.usuario?.nombre?.[0]?.nombre || undefined
-      }
-    }));
+    return (data || []).map(registro => {
+      // Asegurarnos que el usuario sea un objeto con las propiedades esperadas
+      const userEmail = registro.usuario?.email || 'Usuario desconocido';
+      
+      return {
+        ...registro,
+        usuario: {
+          email: userEmail,
+          nombre: undefined // Lo obtendremos de otra consulta si es necesario
+        }
+      };
+    });
   } catch (error: any) {
     console.error('Error al obtener registros de auditoría:', error);
     toast.error('Error al cargar los registros de auditoría: ' + error.message);
@@ -90,9 +79,16 @@ export async function obtenerMisRegistrosAuditoria(
   accion?: string
 ): Promise<RegistroAuditoria[]> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('Usuario no autenticado');
+    }
+    
     let query = supabase
       .from('auditoria')
       .select('*')
+      .eq('usuario_id', user.id)
       .order('timestamp', { ascending: false })
       .limit(limite);
 
@@ -133,13 +129,21 @@ export async function obtenerMisRegistrosAuditoria(
  */
 export async function registrarVisualizacion(tabla: string, registro_id: string, detalles?: any): Promise<void> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.error('Usuario no autenticado, no se puede registrar la visualización');
+      return;
+    }
+    
     const { error } = await supabase
       .from('auditoria')
       .insert({
         tabla,
         registro_id,
         accion: 'ver',
-        detalles: detalles || null
+        detalles: detalles || null,
+        usuario_id: user.id
       });
 
     if (error) {

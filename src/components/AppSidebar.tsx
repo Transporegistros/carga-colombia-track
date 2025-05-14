@@ -20,15 +20,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { usePermisos } from "@/hooks/usePermisos";
-import type { Modulo } from "@/services/permisosService";
-
-// Mapa de nombres de iconos a componentes de Lucide
-const iconComponents: Record<string, React.ComponentType<any>> = {
-  BarChart3
-};
-
-// Importar dinámicamente iconos de Lucide
-import * as LucideIcons from "lucide-react";
+import type { Modulo } from "@/types";
+import { getIconComponent } from "@/utils/iconMapping";
 
 export function AppSidebar() {
   const isMobile = useIsMobile();
@@ -43,9 +36,7 @@ export function AppSidebar() {
     if (modulos && modulos.length > 0) {
       setMenuItems(modulos.map(modulo => ({
         ...modulo,
-        IconComponent: modulo.icono ? 
-          (LucideIcons as any)[modulo.icono] || LucideIcons.FileText : 
-          LucideIcons.FileText
+        IconComponent: getIconComponent(modulo.icono)
       })));
     }
   }, [modulos]);
@@ -83,7 +74,7 @@ export function AppSidebar() {
                 </div>
               ) : (
                 menuItems.map((item) => {
-                  const IconComponent = item.IconComponent || LucideIcons.FileText;
+                  const IconComponent = item.IconComponent || getIconComponent(null);
                   return (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton asChild>

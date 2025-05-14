@@ -13,6 +13,7 @@ import { obtenerRegistrosAuditoria, obtenerMisRegistrosAuditoria, RegistroAudito
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Search, Loader2, Database, Shield, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type DateRange = {
   from: Date | undefined;
@@ -141,8 +142,8 @@ export default function Auditoria() {
             </div>
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
               <DatePickerWithRange 
-                date={fechas} 
-                setDate={setFechas} 
+                date={fechas}
+                setDate={setFechas}
                 className="min-w-[240px]"
               />
               <Select value={filtroTabla} onValueChange={setFiltroTabla}>

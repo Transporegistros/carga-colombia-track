@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -67,15 +66,12 @@ export async function obtenerRegistrosAuditoria(
       // Tratar la información del usuario de forma más segura
       let userEmail = 'Usuario desconocido';
       
-      // Comprobamos explícitamente si registro.usuario es null o undefined
-      if (registro.usuario !== null && registro.usuario !== undefined && typeof registro.usuario === 'object') {
-        // Utilizar type assertion para ayudar a TypeScript a entender que usuario no es null aquí
-        const usuarioObj = registro.usuario as { email?: string };
-        
-        // Verificamos que registro.usuario.email existe y no es null/undefined
-        if (usuarioObj.email) {
-          userEmail = usuarioObj.email;
-        }
+      // TypeScript safe check for usuario
+      const usuarioObj = registro.usuario as { email?: string } | null | undefined;
+      
+      // Verificar que usuario existe y tiene una propiedad email
+      if (usuarioObj && typeof usuarioObj === 'object' && 'email' in usuarioObj && usuarioObj.email) {
+        userEmail = usuarioObj.email;
       }
       
       return {

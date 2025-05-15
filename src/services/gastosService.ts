@@ -1,12 +1,12 @@
 
 import { supabase } from "@/lib/supabase";
-import { Vehiculo } from "@/types";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
 /**
- * Obtiene todos los vehículos de la empresa del usuario actual
+ * Obtiene todos los gastos de un tipo específico para la empresa del usuario actual
  */
-export async function obtenerVehiculos(): Promise<Vehiculo[]> {
+export async function obtenerGastosPorTipo(tipo: string): Promise<any[]> {
   try {
     const { data: perfilData } = await supabase.auth.getUser();
     
@@ -25,31 +25,32 @@ export async function obtenerVehiculos(): Promise<Vehiculo[]> {
       throw new Error("Usuario no asociado a una empresa");
     }
     
-    // Obtenemos los vehículos de la empresa
+    // Obtenemos los gastos del tipo especificado para la empresa
     const { data, error } = await supabase
-      .from('vehiculos')
+      .from('gastos')
       .select('*')
       .eq('empresa_id', perfil.empresa_id)
-      .order('created_at', { ascending: false });
+      .eq('tipo', tipo)
+      .order('fecha', { ascending: false });
     
     if (error) {
-      console.error("Error al obtener vehículos:", error);
-      toast.error("Error al cargar los vehículos: " + error.message);
+      console.error(`Error al obtener gastos de ${tipo}:`, error);
+      toast.error(`Error al cargar los gastos de ${tipo}: ${error.message}`);
       return [];
     }
     
     return data || [];
   } catch (error: any) {
-    console.error("Error al obtener vehículos:", error);
-    toast.error("Error al cargar los vehículos: " + error.message);
+    console.error(`Error al obtener gastos de ${tipo}:`, error);
+    toast.error(`Error al cargar los gastos de ${tipo}: ${error.message}`);
     return [];
   }
 }
 
 /**
- * Agrega un nuevo vehículo
+ * Agrega un nuevo gasto
  */
-export async function agregarVehiculo(vehiculo: Omit<Vehiculo, 'id'>): Promise<Vehiculo | null> {
+export async function agregarGasto(gasto: any): Promise<any | null> {
   try {
     const { data: perfilData } = await supabase.auth.getUser();
     
@@ -68,36 +69,36 @@ export async function agregarVehiculo(vehiculo: Omit<Vehiculo, 'id'>): Promise<V
       throw new Error("Usuario no asociado a una empresa");
     }
     
-    const nuevoVehiculo = {
-      ...vehiculo,
+    const nuevoGasto = {
+      ...gasto,
       empresa_id: perfil.empresa_id,
       created_by: perfilData.user.id
     };
     
     const { data, error } = await supabase
-      .from('vehiculos')
-      .insert(nuevoVehiculo)
+      .from('gastos')
+      .insert(nuevoGasto)
       .select()
       .single();
     
     if (error) {
-      console.error("Error al agregar vehículo:", error);
-      toast.error("Error al guardar el vehículo: " + error.message);
+      console.error("Error al agregar gasto:", error);
+      toast.error(`Error al guardar el gasto de ${gasto.tipo}: ${error.message}`);
       return null;
     }
     
     return data;
   } catch (error: any) {
-    console.error("Error al agregar vehículo:", error);
-    toast.error("Error al guardar el vehículo: " + error.message);
+    console.error("Error al agregar gasto:", error);
+    toast.error(`Error al guardar el gasto: ${error.message}`);
     return null;
   }
 }
 
 /**
- * Actualiza un vehículo existente
+ * Actualiza un gasto existente
  */
-export async function actualizarVehiculo(id: string, vehiculo: Partial<Vehiculo>): Promise<Vehiculo | null> {
+export async function actualizarGasto(id: string, gasto: any): Promise<any | null> {
   try {
     const { data: perfilData } = await supabase.auth.getUser();
     
@@ -107,38 +108,38 @@ export async function actualizarVehiculo(id: string, vehiculo: Partial<Vehiculo>
     
     // Verificar permisos
     const { data: tienePermiso } = await supabase
-      .rpc('tiene_permiso', { modulo_ruta: 'vehiculos', accion: 'editar' });
+      .rpc('tiene_permiso', { modulo_ruta: 'gastos', accion: 'editar' });
     
     if (!tienePermiso) {
-      toast.error("No tienes permisos para editar vehículos");
+      toast.error("No tienes permisos para editar gastos");
       return null;
     }
     
     const { data, error } = await supabase
-      .from('vehiculos')
-      .update(vehiculo)
+      .from('gastos')
+      .update(gasto)
       .eq('id', id)
       .select()
       .single();
     
     if (error) {
-      console.error("Error al actualizar vehículo:", error);
-      toast.error("Error al actualizar el vehículo: " + error.message);
+      console.error("Error al actualizar gasto:", error);
+      toast.error(`Error al actualizar el gasto: ${error.message}`);
       return null;
     }
     
     return data;
   } catch (error: any) {
-    console.error("Error al actualizar vehículo:", error);
-    toast.error("Error al actualizar el vehículo: " + error.message);
+    console.error("Error al actualizar gasto:", error);
+    toast.error(`Error al actualizar el gasto: ${error.message}`);
     return null;
   }
 }
 
 /**
- * Elimina un vehículo
+ * Elimina un gasto
  */
-export async function eliminarVehiculo(id: string): Promise<boolean> {
+export async function eliminarGasto(id: string): Promise<boolean> {
   try {
     const { data: perfilData } = await supabase.auth.getUser();
     
@@ -148,28 +149,28 @@ export async function eliminarVehiculo(id: string): Promise<boolean> {
     
     // Verificar permisos
     const { data: tienePermiso } = await supabase
-      .rpc('tiene_permiso', { modulo_ruta: 'vehiculos', accion: 'eliminar' });
+      .rpc('tiene_permiso', { modulo_ruta: 'gastos', accion: 'eliminar' });
     
     if (!tienePermiso) {
-      toast.error("No tienes permisos para eliminar vehículos");
+      toast.error("No tienes permisos para eliminar gastos");
       return false;
     }
     
     const { error } = await supabase
-      .from('vehiculos')
+      .from('gastos')
       .delete()
       .eq('id', id);
     
     if (error) {
-      console.error("Error al eliminar vehículo:", error);
-      toast.error("Error al eliminar el vehículo: " + error.message);
+      console.error("Error al eliminar gasto:", error);
+      toast.error(`Error al eliminar el gasto: ${error.message}`);
       return false;
     }
     
     return true;
   } catch (error: any) {
-    console.error("Error al eliminar vehículo:", error);
-    toast.error("Error al eliminar el vehículo: " + error.message);
+    console.error("Error al eliminar gasto:", error);
+    toast.error(`Error al eliminar el gasto: ${error.message}`);
     return false;
   }
 }

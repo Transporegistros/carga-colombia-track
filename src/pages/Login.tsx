@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,13 +18,12 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, loading, isAuthenticated } = useAuth();
-  
+
   // Determinar la página a la que redirigir después del login
   const from = location.state?.from?.pathname || "/";
 
   // Si el usuario ya está autenticado, redirigir al dashboard
   useEffect(() => {
-    console.log("Login - Auth status:", { isAuthenticated, loading });
     if (!loading && isAuthenticated) {
       navigate(from, { replace: true });
     }
@@ -35,20 +33,24 @@ const Login = () => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
-    
+
     try {
       if (!email || !password) {
         setError("Por favor ingrese correo y contraseña");
         setIsSubmitting(false);
         return;
       }
-      
       await login(email, password);
       toast.success("Inicio de sesión exitoso");
       navigate(from, { replace: true });
     } catch (err) {
+      let msg = (err as Error).message || "Error al iniciar sesión. Verifique sus credenciales.";
+      if (msg.includes("Supabase URL")) {
+        msg += " (¿Olvidaste el archivo .env?)";
+      }
+      setError(msg);
+      // eslint-disable-next-line no-console
       console.error("Error de inicio de sesión:", err);
-      setError((err as Error).message || "Error al iniciar sesión. Verifique sus credenciales.");
     } finally {
       setIsSubmitting(false);
     }
@@ -61,9 +63,7 @@ const Login = () => {
           <CardTitle className="text-2xl font-bold tracking-tight text-primary">
             TranspoRegistrosPlus
           </CardTitle>
-          <CardDescription>
-            Ingrese sus datos para acceder al sistema
-          </CardDescription>
+          <CardDescription>Ingrese sus datos para acceder al sistema</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -91,9 +91,6 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Label htmlFor="password">Contraseña</Label>
-                <Link to="/recuperar-password" className="text-sm text-primary hover:underline">
-                  ¿Olvidó su contraseña?
-                </Link>
               </div>
               <div className="relative">
                 <Input
@@ -102,43 +99,30 @@ const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-10"
                   required
                   disabled={loading || isSubmitting}
                 />
                 <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute right-0 top-0" 
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading || isSubmitting}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((sp) => !sp)}
+                  className="absolute right-3 top-2.5"
+                  tabIndex={-1}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-muted-foreground" />
-                  )}
-                  <span className="sr-only">
-                    {showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  </span>
-                </Button>
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
-              {loading || isSubmitting ? "Iniciando sesión..." : "Iniciar Sesión"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || isSubmitting}
+              loading={loading || isSubmitting}
+            >
+              Ingresar
             </Button>
           </form>
-
-          <div className="mt-6">
-            <p className="text-center text-sm text-muted-foreground">
-              ¿No tiene una cuenta?{" "}
-              <Link to="/registro" className="text-primary hover:underline">
-                Regístrese aquí
-              </Link>
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
